@@ -16,7 +16,6 @@
 #include <Separator.h>
 #include "ArduinoUniqueID.h"
 #include <Wire.h>
-#include "MifareReaderWriter.h"
 // Search for parameter in HTTP POST request
 const char* PARAM_INPUT_1 = "ssid";
 const char* PARAM_INPUT_2 = "pass";
@@ -82,7 +81,7 @@ const void* SNS;
 #define KEYACCESS_SECTOR_1  0x07 //Sector1
 #define KEYACCESS_SECTOR_2  0x0B //Sector2
 
-mifareReaderWriter miFareReaderWriter(SS_PIN,RST_PIN,4,6,5,7);
+
 MFRC522 RfChip(SS_PIN, RST_PIN);
 MFRC522::MIFARE_Key key;
 
