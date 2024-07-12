@@ -869,8 +869,15 @@ String returnCard(byte *buffer, byte bufferSize)
   String ArrayCard;
   String index = " ";
   for (byte i = 0; i < bufferSize; i++) {
-    card += (buffer[i] < 0x10 ? "0" :  " ");
+    if (buffer[i] < 0x10) {
+        card += "0";
+    }
+    // Convertimos el byte a su representación hexadecimal en mayúsculas y lo añadimos a 'card'
     card += String(buffer[i], HEX);
+    // Añadimos un espacio entre los bytes, excepto después del último byte
+    if (i < bufferSize - 1) {
+        card += " ";
+    }
   }
   card = toUpperCaseString(card);
   Card = separator.SeparatorIndex(card,index);
@@ -878,10 +885,10 @@ String returnCard(byte *buffer, byte bufferSize)
       {
         Card[h];
       }
-  ArrayCard = Card[4] + Card[3] + Card[2] + Card[1];
+  ArrayCard = Card[3] + Card[2] + Card[1] + Card[0];
   if(ArrayCard.length()>8)
   {
-    ArrayCard = Card[3] + Card[2] + Card[1];
+    ArrayCard = Card[2] + Card[1] + Card[0];
   }
   return ArrayCard;
 }
@@ -1158,7 +1165,6 @@ bool MifareReadProcess(byte SectorAccess,byte BlockAccess)
     //piccStatus = RfChip.MIFARE_Write(BlockAccess,(uint8_t *)&SN[0], 16);
   if(piccStatus != MFRC522::STATUS_OK)
   {
-     Serial.println("stop2");
     //Debug.printf("ERROR: Writing Block [%d] -> %s\r\n\r\n", PICC_LPC_UID_BLOCK, RfChip.GetStatusCodeName(piccStatus));
     RfChip.PCD_StopCrypto1();
     RfChip.PICC_HaltA(); 
@@ -1168,7 +1174,6 @@ bool MifareReadProcess(byte SectorAccess,byte BlockAccess)
     ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
     return false;
   }
-  Serial.println("c");
   piccStatus = RfChip.MIFARE_Write(BlockAccess + 1, tv, 16);
   if(piccStatus != MFRC522::STATUS_OK)
   {
@@ -1316,7 +1321,7 @@ void loop()
     }
   if (myQrreaderwork.ReadQR()>0)
   {
-        mySignal.ledON(BLUE);
+        //mySignal.ledON(BLUE);
         myQR = myQrreaderwork.getQR();
         LongQR = myQR.length();
         counQRSoli++;
@@ -1336,6 +1341,10 @@ void loop()
                 alivetrue = true;
                 miFareWifi = true;
                 if (QRActive==false)
+                {
+                  MifareReaderAvailable = true;
+                }
+                else
                 {
                   MifareReaderAvailable = true;
                 }
@@ -1376,10 +1385,6 @@ void loop()
     toggleCounting(false,LastTimeMifare);
     MifareActivateTimeoutHandler();
   }
-  // if (myWEBService.ClientConnected(countQRValido, counQRIni, countQRInv, countErrWifi, counQRSoli, counWifiC, counErrServ, counErrServT, countQRValidoT,ip,myServerComunic.Hour()))
-  //   {
-  //     Serial.println("Se conecto un cliente ");
-  //   }
    TimeOut::handler();  
 }
 
