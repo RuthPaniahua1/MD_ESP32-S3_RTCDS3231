@@ -16,6 +16,7 @@
 #include <Separator.h>
 #include "ArduinoUniqueID.h"
 #include <Wire.h>
+#include "MifareReaderWriter.h"
 // Search for parameter in HTTP POST request
 const char* PARAM_INPUT_1 = "ssid";
 const char* PARAM_INPUT_2 = "pass";
@@ -81,6 +82,7 @@ const void* SNS;
 #define KEYACCESS_SECTOR_1  0x07 //Sector1
 #define KEYACCESS_SECTOR_2  0x0B //Sector2
 
+mifareReaderWriter miFareReaderWriter(SS_PIN,RST_PIN,4,6,5,7);
 MFRC522 RfChip(SS_PIN, RST_PIN);
 MFRC522::MIFARE_Key key;
 
@@ -139,6 +141,7 @@ TimeOut OkStatusLedTimeout;
 TimeOut ErrorStatusLedTimeout;
 TimeOut MifareActivateTimeout;
 uint8_t tv[16] ={2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+uint8_t ET[16] ={2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 int TTE = 30;
 byte TTE_MSB = 0;
@@ -147,17 +150,14 @@ byte TTE_LSB = 0;
 byte EntryDate[16];
 byte ReadDatas[16];
 
+String toUpperCaseString(String input);
 void WiFiConnection();
 bool initWiFi();
 void initSPIFFS();
 void toggleCounting(boolean enable,int timerIndex);
 void SelectQR(String QR, int LongQR);
 void ServerConnection(String DATA);
-void IDArduino();
-String returnValidator(byte *buffer, byte bufferSize);
-void printHex(byte *buffer, byte bufferSize);
 void relay();
-String toUpperCaseString(String input);
 int countReconect;
 int Buzzer = 2;
 
@@ -310,7 +310,7 @@ void ServerConnection(String DATA)
       mySignal.flashLed(2,GREEN,150,25,true);
       if (QRActive==false)
       {
-        MifareReaderAvailable=true;
+        // miFareReaderWriter.MifareReaderAvailable=true;
       }
       relay();
     }
@@ -322,7 +322,7 @@ void ServerConnection(String DATA)
       mySignal.flashLed(2,RED,500,150,true);
        if (QRActive==false)
       {
-        MifareReaderAvailable=true;
+        // miFareReaderWriter.MifareReaderAvailable=true;
       }
     }  
   }
@@ -549,7 +549,7 @@ void setup()
   myQrreaderwork.StartBaudRate(18,17,9600); //Inicializacion QR
   myWEBService.port(); //Inicializacion de puerto Serial de Web service esp32
   SPI.begin(); // Init SPI bus
-  RfChip.PCD_Init();  
+  //RfChip.PCD_Init();  
   Serial.println("**********ESP32 INIT***********");
   getCountVariables();
   pinMode(myPin, OUTPUT);
@@ -571,12 +571,12 @@ void setup()
   toggleCounting(true,LastTimeQRStart);
   memset(UniqueIDArduino, 0 , 16); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    //UNIQUE ID ARDUINO
-  IDArduino();
+  // miFareReaderWriter.IDArduino();
   Serial.print(F("ID ESP32::"));
-  printHex(UniqueIDArduino, 16);
+  // miFareReaderWriter.printHex(UniqueIDArduino, 16);
   Serial.println("");
   Serial.println(miFareWifi);
-  validatorSN = returnValidator(UniqueIDArduino, 16);
+  // validatorSN = miFareReaderWriter.returnValidator(UniqueIDArduino, 16);
    if ((counQRIni == 4) && (countPCW <= timetoConfigureWifi))
   {
     Serial.println("modo de configuracion");
@@ -869,15 +869,8 @@ String returnCard(byte *buffer, byte bufferSize)
   String ArrayCard;
   String index = " ";
   for (byte i = 0; i < bufferSize; i++) {
-    if (buffer[i] < 0x10) {
-        card += "0";
-    }
-    // Convertimos el byte a su representación hexadecimal en mayúsculas y lo añadimos a 'card'
+    card += (buffer[i] < 0x10 ? "0" :  " ");
     card += String(buffer[i], HEX);
-    // Añadimos un espacio entre los bytes, excepto después del último byte
-    if (i < bufferSize - 1) {
-        card += " ";
-    }
   }
   card = toUpperCaseString(card);
   Card = separator.SeparatorIndex(card,index);
@@ -885,10 +878,10 @@ String returnCard(byte *buffer, byte bufferSize)
       {
         Card[h];
       }
-  ArrayCard = Card[3] + Card[2] + Card[1] + Card[0];
+  ArrayCard = Card[4] + Card[3] + Card[2] + Card[1];
   if(ArrayCard.length()>8)
   {
-    ArrayCard = Card[2] + Card[1] + Card[0];
+    ArrayCard = Card[3] + Card[2] + Card[1];
   }
   return ArrayCard;
 }
@@ -1165,6 +1158,7 @@ bool MifareReadProcess(byte SectorAccess,byte BlockAccess)
     //piccStatus = RfChip.MIFARE_Write(BlockAccess,(uint8_t *)&SN[0], 16);
   if(piccStatus != MFRC522::STATUS_OK)
   {
+     Serial.println("stop2");
     //Debug.printf("ERROR: Writing Block [%d] -> %s\r\n\r\n", PICC_LPC_UID_BLOCK, RfChip.GetStatusCodeName(piccStatus));
     RfChip.PCD_StopCrypto1();
     RfChip.PICC_HaltA(); 
@@ -1174,6 +1168,7 @@ bool MifareReadProcess(byte SectorAccess,byte BlockAccess)
     ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
     return false;
   }
+  Serial.println("c");
   piccStatus = RfChip.MIFARE_Write(BlockAccess + 1, tv, 16);
   if(piccStatus != MFRC522::STATUS_OK)
   {
@@ -1280,7 +1275,7 @@ void loop()
             Serial.println("No hay QR conectado");
             toggleCounting(false,LastTimeQRStart);
             QRsendComand = false;
-            MifareReaderAvailable = true;
+            // miFareReaderWriter.MifareReaderAvailable = true;
             toggleCounting(true,LastTimeAlive);
           }
         }
@@ -1289,7 +1284,7 @@ void loop()
           //miFareWifi=true;
           //toggleCounting(true,LastTimeAlive);
           //WifiConnected = true;
-          MifareReaderAvailable = false;
+          // miFareReaderWriter.MifareReaderAvailable = true;
           QRActive = true;
           if (alivetrue ==true)
           {
@@ -1301,7 +1296,7 @@ void loop()
           }   
         }
       }
-  if (MifareReaderAvailable)
+if (MifareReaderAvailable)
     {
       if (alivetrue ==true || miFareWifi ==false)
       {
@@ -1333,7 +1328,7 @@ void loop()
       alive = false;
       Serial.println("Alive");
       if(myServerComunic.HttpClientRequest(true,arrayWS,false,ipWS,ip,validatorSN,0,ConectionPort,ConsultPort))
-              {
+             {
                 //mySignal.ledOFF();
                 toggleCounting(true,LastTimeAlive);
                 Serial.print("DateTime: ");
@@ -1385,6 +1380,10 @@ void loop()
     toggleCounting(false,LastTimeMifare);
     MifareActivateTimeoutHandler();
   }
+  // if (myWEBService.ClientConnected(countQRValido, counQRIni, countQRInv, countErrWifi, counQRSoli, counWifiC, counErrServ, counErrServT, countQRValidoT,ip,myServerComunic.Hour()))
+  //   {
+  //     Serial.println("Se conecto un cliente ");
+  //   }
    TimeOut::handler();  
 }
 
