@@ -16,6 +16,7 @@
 #include <Separator.h>
 #include "ArduinoUniqueID.h"
 #include <Wire.h>
+#include "MifareReaderWriter.h"
 // Search for parameter in HTTP POST request
 const char* PARAM_INPUT_1 = "ssid";
 const char* PARAM_INPUT_2 = "pass";
@@ -81,6 +82,7 @@ const void* SNS;
 #define KEYACCESS_SECTOR_1  0x07 //Sector1
 #define KEYACCESS_SECTOR_2  0x0B //Sector2
 
+mifareReaderWriter miFareReaderWriter(SS_PIN,RST_PIN,4,6,5,7);
 MFRC522 RfChip(SS_PIN, RST_PIN);
 MFRC522::MIFARE_Key key;
 
@@ -119,7 +121,6 @@ bool alive = false;
 bool reconnectNetwork= false;
 bool counting;
 IPAddress localIP;
-bool MifareReaderAvailable = false;
 bool accessPoint = false;
 bool alivetrue = false;
 bool QRActive = false;
@@ -139,6 +140,7 @@ TimeOut OkStatusLedTimeout;
 TimeOut ErrorStatusLedTimeout;
 TimeOut MifareActivateTimeout;
 uint8_t tv[16] ={2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+uint8_t ET[16] ={2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 int TTE = 30;
 byte TTE_MSB = 0;
@@ -153,11 +155,7 @@ void initSPIFFS();
 void toggleCounting(boolean enable,int timerIndex);
 void SelectQR(String QR, int LongQR);
 void ServerConnection(String DATA);
-void IDArduino();
-String returnValidator(byte *buffer, byte bufferSize);
-void printHex(byte *buffer, byte bufferSize);
 void relay();
-String toUpperCaseString(String input);
 int countReconect;
 int Buzzer = 2;
 
@@ -310,7 +308,7 @@ void ServerConnection(String DATA)
       mySignal.flashLed(2,GREEN,150,25,true);
       if (QRActive==false)
       {
-        MifareReaderAvailable=true;
+        miFareReaderWriter.MifareReaderAvailable=true;
       }
       relay();
     }
@@ -322,7 +320,7 @@ void ServerConnection(String DATA)
       mySignal.flashLed(2,RED,500,150,true);
        if (QRActive==false)
       {
-        MifareReaderAvailable=true;
+        miFareReaderWriter.MifareReaderAvailable=true;
       }
     }  
   }
@@ -549,7 +547,7 @@ void setup()
   myQrreaderwork.StartBaudRate(18,17,9600); //Inicializacion QR
   myWEBService.port(); //Inicializacion de puerto Serial de Web service esp32
   SPI.begin(); // Init SPI bus
-  RfChip.PCD_Init();  
+  //RfChip.PCD_Init();  
   Serial.println("**********ESP32 INIT***********");
   getCountVariables();
   pinMode(myPin, OUTPUT);
@@ -571,12 +569,12 @@ void setup()
   toggleCounting(true,LastTimeQRStart);
   memset(UniqueIDArduino, 0 , 16); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    //UNIQUE ID ARDUINO
-  IDArduino();
+  miFareReaderWriter.IDArduino();
   Serial.print(F("ID ESP32::"));
-  printHex(UniqueIDArduino, 16);
+  miFareReaderWriter.printHex(UniqueIDArduino, 16);
   Serial.println("");
   Serial.println(miFareWifi);
-  validatorSN = returnValidator(UniqueIDArduino, 16);
+  validatorSN = miFareReaderWriter.returnValidator(UniqueIDArduino, 16);
    if ((counQRIni == 4) && (countPCW <= timetoConfigureWifi))
   {
     Serial.println("modo de configuracion");
@@ -823,406 +821,6 @@ String returnArrayWS(byte *buffer, byte bufferSize, String validatorSN, String c
   return returnarrayWS;
 }
 
-String returnValidator(byte *buffer, byte bufferSize){
-  String validator;
-  String Validator;
-  for (byte i = 0; i < bufferSize; i++) {
-    validator += (buffer[i] < 0x10 ? "0" : "");
-    validator += String(buffer[i], HEX);
-  }
-  validator = toUpperCaseString(validator);
-  Validator = (validator.substring(0,8))+ (validator.substring(16,24));
-  return Validator;
-}
-
-void MifareActivateTimeoutHandler(void)
-{
-  Serial.println("MifareActivateTimeout");
-  //MifareActivateTimeout.detach();
-  MifareReaderAvailable = true;
-  mySignal.ledON(BLUE); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
- // ReadingStatusLed.write(LED_ON);
-}
-
-void OkStatusLedTimeoutHandler(void)
-{
-  Serial.println("OkStatusLedTimeoutHandler");
-  analogWrite(Buzzer, 0);
-  //OkStatusLedTimeout.detach();
-  //OkStatusLed.write(LED_OFF);
-  mySignal.buzzerOFF(); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
-  //MifareActivateTimeout.attach(&MifareActivateTimeoutHandler, TIME_SLEEP_MIFARE);
-  MifareActivateTimeout.timeOut(400, MifareActivateTimeoutHandler); //delay 10000=10seg, callback function  
-}
-
-void printHex(byte *buffer, byte bufferSize) {
-  for (byte i = 0; i < bufferSize; i++) {
-    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-    Serial.print(buffer[i], HEX);
-  }
-}
-
-String returnCard(byte *buffer, byte bufferSize)
-{
-  String card;
-  String* Card;
-  String ArrayCard;
-  String index = " ";
-  for (byte i = 0; i < bufferSize; i++) {
-    card += (buffer[i] < 0x10 ? "0" :  " ");
-    card += String(buffer[i], HEX);
-  }
-  card = toUpperCaseString(card);
-  Card = separator.SeparatorIndex(card,index);
-  for ( int h = 0; h < 8; h++ ) 
-      {
-        Card[h];
-      }
-  ArrayCard = Card[4] + Card[3] + Card[2] + Card[1];
-  if(ArrayCard.length()>8)
-  {
-    ArrayCard = Card[3] + Card[2] + Card[1];
-  }
-  return ArrayCard;
-}
-
-String toUpperCaseString(String input) {
-  String result = "";
-  for (int i = 0; i < input.length(); i++) {
-    result += char(toupper(input.charAt(i)));
-  }
-  return result;
-}
-
-void IDArduino()
-{
-  memcpy(UniqueIDArduino, UniqueID8, 4);//copia los primeros 4 en UniqueIDArduino
-  memcpy(UniqueIDArduino+8, UniqueID8+4, 4);//UniqueID8+4 recorre 4 y copia los 2dos 4 a UniqueIDArduino+8 a partir de la posicion 8
- }
-
-void ErrorStatusLedTimeoutHandler(void)
-{
- Serial.println("ErrorStatusLedTimeout"); 
-  mySignal.buzzerOFF(); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
-  MifareActivateTimeout.timeOut(400, MifareActivateTimeoutHandler); //delay 10000=10seg, callback function  
-}
-
-void printDec(byte *buffer, byte bufferSize) {
-  for (byte i = 0; i < bufferSize; i++) {
-    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-    Serial.print(buffer[i], DEC);
-  }
-}
-
-bool MifareReadProcess(byte SectorAccess,byte BlockAccess)
-{
-  if(!RfChip.PICC_IsNewCardPresent())
-  {    
-    return false;
-  } 
-  if (!RfChip.PICC_ReadCardSerial())
-  {
-    return false;
-  }
-  //Debug.printf("PICC Card UID: "); 
-  for (byte i = 0; i < 4; i++) 
-  {
-    Serial.println(" Card present");
-    nuidPICC[i] = RfChip.uid.uidByte[i];
-  }
-
-  Serial.print(F("UID::"));
-   printHex(RfChip.uid.uidByte, RfChip.uid.size);
-  Card = returnCard(RfChip.uid.uidByte, RfChip.uid.size);
-  //printDec(RfChip.uid.uidByte, RfChip.uid.size);
-  Serial.println("Card: ");
-  Serial.println(Card);
-  Serial.println();
-  Serial.println(" Card present");
-  //Card type
-  uint8_t piccType = RfChip.PICC_GetType(RfChip.uid.sak);
- // Serial.println(RfChip.PICC_GetTypeName(piccType));
-
-  for(int mainCounter = 0; mainCounter < MFRC522::MF_KEY_SIZE; mainCounter++)
-      key.keyByte[mainCounter] = 0xFF;   
-  //printHex(key.keyByte, MFRC522::MF_KEY_SIZE);
-  //Serial.println(); 
-
-   MFRC522::StatusCode status;
-  //Authenticate using key A
-  //Serial.println("Authenticating using key A...");
-  MFRC522::PICC_Command piccAuthKey = MFRC522::PICC_CMD_MF_AUTH_KEY_A;
-  uint8_t piccStatus = RfChip.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, SectorAccess, &key, &RfChip.uid);
-  //status = (MFRC522::StatusCode) RfChip.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, PICC_TRAILER_BLOCK_1, &key, &(RfChip.uid));
-  if (piccStatus != MFRC522::STATUS_OK) 
-  {
-      Serial.println("Authenticate key A::failed: ");
-      Serial.println("");
-      RfChip.PCD_StopCrypto1();
-      RfChip.PICC_HaltA();
-      if(!RfChip.PICC_IsNewCardPresent())
-        {
-          //Debug.printf("NO Card Detected\r\n");
-          return false;
-        }
-      if (!RfChip.PICC_ReadCardSerial())
-        {
-           //Debug.printf("Cannot read serial number\r\n");
-          return false;
-        }
-        
-      //Debug.printf("PICC Card UID: ");
-      for (byte i = 0; i < 4; i++) {
-          nuidPICC[i] = RfChip.uid.uidByte[i];
-        }
-
-      piccType = RfChip.PICC_GetType(RfChip.uid.sak);
-
-      for(int mainCounter = 0; mainCounter < MFRC522::MF_KEY_SIZE; mainCounter++)
-          key.keyByte[mainCounter] = 0xFF;
-      
-      piccStatus = RfChip.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_B, SectorAccess, &key, &RfChip.uid);
-
-      if(piccStatus != MFRC522::STATUS_OK)
-      {
-        Serial.println("Authenticate key B::failed: ");
-        Serial.println("");
-        RfChip.PCD_StopCrypto1();
-        RfChip.PICC_HaltA();
-        mySignal.ledON(RED);
-        //setColor(0, 255, 255); //RGB= RedErrorStatusLed/GreenReadingStatusLed/BlueOkStatusLed
-        MifareReaderAvailable = false;
-        ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
-        return false;
-      }
-      //Serial.println("Authenticating using key B...");
-      piccAuthKey = MFRC522::PICC_CMD_MF_AUTH_KEY_B;
-  }
-  else
-  //Serial.println("Authentification type -> A");
-
-  memset(UniqueIDArduino, 0 , 16); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-   //UNIQUE ID ARDUINO
-  IDArduino();
-   
-  uint8_t piccReadBuffer[PICC_RX_SIZE];
-  uint8_t piccReadBufferSize = sizeof(piccReadBuffer);
-  piccStatus = RfChip.PCD_Authenticate(piccAuthKey, SectorAccess, &key, &RfChip.uid);
-  if(piccStatus != MFRC522::STATUS_OK)
-  {
-    //Debug.printf("ERROR: Authentification block[%d] -> %s\r\n\r\n", PICC_TRAILER_BLOCK_1, RfChip.GetStatusCodeName(piccStatus));
-    RfChip.PCD_StopCrypto1();
-    RfChip.PICC_HaltA();
-    mySignal.ledON(RED); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
-    MifareReaderAvailable = false;
-    ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
-    return false;
-  }
-  piccStatus = RfChip.MIFARE_Read(BlockAccess, piccReadBuffer, &piccReadBufferSize);
-  if(piccStatus != MFRC522::STATUS_OK)
-  {
-    //Debug.printf("ERROR: Reading Block [%d] -> %s\r\n\r\n", PICC_LPC_UID_BLOCK, RfChip.GetStatusCodeName(piccStatus));
-    RfChip.PCD_StopCrypto1();
-    RfChip.PICC_HaltA();
-    mySignal.ledON(RED);
-    MifareReaderAvailable = false;
-    ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
-    //ErrorStatusLedTimeout.attach(&ErrorStatusLedTimeoutHandler, TIME_SLEEP_MIFARE);
-    return false;
-  }  
-
-  //Serial.print(F("ReadDataS1B0::"));
-  //printHex(piccReadBuffer, 16);
-  //Serial.println("");       
-  
-  //Serial.print(TTE_MSB, HEX);
-  //Serial.print(" ");  
-  //Serial.println(TTE_LSB, HEX);      
-  //Serial.println(""); 
-  //int TolEntryCard = (( TTE_MSB << 7) |  TTE_LSB);
-  //Serial.println(TolEntryCard, HEX);   
-  
-  TTE_MSB = ((TTE >> 8) & 0xFF);
-  TTE_LSB = (TTE & 0xFF);
-  memset(EntryDate, 0 , 16);
-  memcpy(EntryDate, piccReadBuffer, 16);
-         
-  EntryDate[7]=TTE_MSB;
-  EntryDate[8]=TTE_LSB;
-
-  piccStatus = RfChip.MIFARE_Write(BlockAccess, (uint8_t *)&EntryDate[0], 16);
-  if(piccStatus != MFRC522::STATUS_OK)
-  {
-    //Debug.printf("ERROR: Writing Block [%d] -> %s\r\n\r\n", PICC_LPC_UID_BLOCK, RfChip.GetStatusCodeName(piccStatus));
-    RfChip.PCD_StopCrypto1();
-    RfChip.PICC_HaltA(); 
-    mySignal.ledON(RED);
-    //setColor(0, 255, 255); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
-    MifareReaderAvailable = false;
-    ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
-    return false;
-  }
-
-  Serial.print(F("EntryDate&TTE:"));
-  printHex(EntryDate, 16);
-  Serial.println("");
- 
-  /*ACCESO SECTOR 2*/
-
-  //Serial.print(F("S2B0"));
-  //KEYACCESS_SECTOR_1,BLOCK_0 + 4
-
-  SectorAccess = KEYACCESS_SECTOR_2;  
-  BlockAccess = BLOCK_0 + 8;
-
-  //MFRC522::StatusCode status;
- 
-  //Authenticate using key A
-  //Serial.println("Authenticating using key A...");
-  //MFRC522::PICC_Command piccAuthKey = MFRC522::PICC_CMD_MF_AUTH_KEY_A;
-  
-   piccStatus = RfChip.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, SectorAccess, &key, &RfChip.uid);
-  if (piccStatus != MFRC522::STATUS_OK) {
-      Serial.println("Authenticate key A::failed: ");
-      Serial.println("");
-      RfChip.PCD_StopCrypto1();
-      RfChip.PICC_HaltA();
-      if(!RfChip.PICC_IsNewCardPresent())
-        {
-          //Debug.printf("NO Card Detected\r\n");
-          return false;
-        }
-      if (!RfChip.PICC_ReadCardSerial())
-        {
-           //Debug.printf("Cannot read serial number\r\n");
-          return false;
-        }
-        
-      //Debug.printf("PICC Card UID: ");
-      for (byte i = 0; i < 4; i++) {
-          nuidPICC[i] = RfChip.uid.uidByte[i];
-        }
-
-      piccType = RfChip.PICC_GetType(RfChip.uid.sak);
-
-      for(int mainCounter = 0; mainCounter < MFRC522::MF_KEY_SIZE; mainCounter++)
-          key.keyByte[mainCounter] = 0xFF;
-      
-      piccStatus = RfChip.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_B, SectorAccess, &key, &RfChip.uid);
-      if(piccStatus != MFRC522::STATUS_OK)
-      {
-        Serial.println("Authenticate key B::failed: ");
-        Serial.println("");
-        RfChip.PCD_StopCrypto1();
-        RfChip.PICC_HaltA();
-        mySignal.ledON(RED);
-        //setColor(0, 255, 255); //RGB= RedErrorStatusLed/GreenReadingStatusLed/BlueOkStatusLed
-        MifareReaderAvailable = false;
-        ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
-        return false;
-      }
-      //Serial.println("Authenticating using key B...");
-      piccAuthKey = MFRC522::PICC_CMD_MF_AUTH_KEY_B;
-  }
-  else
-  
-  //Serial.println("Authentification type -> A");
-
-  memset(UniqueIDArduino, 0 , 16); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-   //UNIQUE ID ARDUINO
-  IDArduino();
-  
-  // Serial.print(F("ID Arduino::"));
-  // printHex(UniqueIDArduino, 16);
-  // Serial.println("");
-  //  printDec(UniqueIDArduino,16);
-  // Serial.println("");
-   
-  //uint8_t piccReadBuffer[PICC_RX_SIZE];
-  //uint8_t piccReadBufferSize = sizeof(piccReadBuffer);
-  piccStatus = RfChip.PCD_Authenticate(piccAuthKey, SectorAccess, &key, &RfChip.uid);
-  if(piccStatus != MFRC522::STATUS_OK)
-  {
-    //Debug.printf("ERROR: Authentification block[%d] -> %s\r\n\r\n", PICC_TRAILER_BLOCK_1, RfChip.GetStatusCodeName(piccStatus));
-    RfChip.PCD_StopCrypto1();
-    RfChip.PICC_HaltA();
-    mySignal.ledON(RED);
-    //setColor(0, 255, 255); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
-    MifareReaderAvailable = false;
-    ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
-    return false;
-  }
-  
-    piccStatus = RfChip.MIFARE_Write(BlockAccess,(uint8_t *)&UniqueIDArduino[0], 16);
-    //Serial.println(SN);
-    //piccStatus = RfChip.MIFARE_Write(BlockAccess,(uint8_t *)&SN[0], 16);
-  if(piccStatus != MFRC522::STATUS_OK)
-  {
-     Serial.println("stop2");
-    //Debug.printf("ERROR: Writing Block [%d] -> %s\r\n\r\n", PICC_LPC_UID_BLOCK, RfChip.GetStatusCodeName(piccStatus));
-    RfChip.PCD_StopCrypto1();
-    RfChip.PICC_HaltA(); 
-    mySignal.ledON(RED);
-    //setColor(0, 255, 255); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
-    MifareReaderAvailable = false;
-    ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
-    return false;
-  }
-  Serial.println("c");
-  piccStatus = RfChip.MIFARE_Write(BlockAccess + 1, tv, 16);
-  if(piccStatus != MFRC522::STATUS_OK)
-  {
- //   Debug.printf("ERROR: Writing Block [%d] -> %s\r\n\r\n", PICC_LPC_UID_BLOCK + 1, RfChip.GetStatusCodeName(piccStatus));
-    RfChip.PCD_StopCrypto1();
-    RfChip.PICC_HaltA();
-    mySignal.ledON(RED); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
-    MifareReaderAvailable = false;
-    ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
-    //ErrorStatusLedTimeout.attach(&ErrorStatusLedTimeoutHandler, TIME_SLEEP_MIFARE);
-    return false;
-  }
-
-  piccStatus = RfChip.MIFARE_Read(BlockAccess, piccReadBuffer, &piccReadBufferSize);
-  if(piccStatus != MFRC522::STATUS_OK)
-  {
-    //Debug.printf("ERROR: Reading Block [%d] -> %s\r\n\r\n", PICC_LPC_UID_BLOCK, RfChip.GetStatusCodeName(piccStatus));
-    RfChip.PCD_StopCrypto1();
-    RfChip.PICC_HaltA();
-    mySignal.ledON(RED);
-    //setColor(0, 255, 255); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
-    MifareReaderAvailable = false;
-    ErrorStatusLedTimeout.timeOut(500, ErrorStatusLedTimeoutHandler); //delay 10000=10seg, callback function
-    //ErrorStatusLedTimeout.attach(&ErrorStatusLedTimeoutHandler, TIME_SLEEP_MIFARE);
-    return false;
-  }  
-
-  Serial.print(F("Validator::"));
-  //printHex(piccReadBuffer, 16);
-  //Serial.println("");
-  validatorSN = returnValidator(piccReadBuffer, 16);
-  Serial.println(validatorSN);
-  //Web Service Comunication
-// if (myServerCom.HttpClientRequest(false,arrayWS,false,ipWS,ipFija,validatorSN,0)){
-  arrayWS = returnArrayWS(EntryDate, 16, validatorSN,Card);
-  Serial.print("ArrayWS: ");
-  Serial.println(arrayWS);
-//   }
-/*End Acces*/
-  RfChip.PCD_StopCrypto1();
-  RfChip.PICC_HaltA();
-  mySignal.ledON(GREEN);
-  //setColor(255, 255, 0); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
-  analogWrite(Buzzer, 255);
-  delay(300);
-  //Beep_Buzzer(2058,300, 2);
-  MifareReaderAvailable = false;
-  mySignal.flashLed(1,GREEN,500,0,true);
-  toggleCounting(true,LastTimeMifare);
-  OkStatusLedTimeout.timeOut(400, OkStatusLedTimeoutHandler); //delay 10000=10seg, callback function
-  //MifareActivateTimeoutHandler();
-  Serial.println("");  
-  return true;  
-}
 
 void loop() 
 {
@@ -1275,7 +873,7 @@ void loop()
             Serial.println("No hay QR conectado");
             toggleCounting(false,LastTimeQRStart);
             QRsendComand = false;
-            MifareReaderAvailable = true;
+            miFareReaderWriter.MifareReaderAvailable = true;
             toggleCounting(true,LastTimeAlive);
           }
         }
@@ -1284,7 +882,7 @@ void loop()
           //miFareWifi=true;
           //toggleCounting(true,LastTimeAlive);
           //WifiConnected = true;
-          MifareReaderAvailable = false;
+          miFareReaderWriter.MifareReaderAvailable = true;
           QRActive = true;
           if (alivetrue ==true)
           {
@@ -1296,7 +894,7 @@ void loop()
           }   
         }
       }
-  if (MifareReaderAvailable)
+  if (miFareReaderWriter.MifareReaderAvailable)
     {
       if (alivetrue ==true || miFareWifi ==false)
       {
@@ -1306,7 +904,8 @@ void loop()
       {
         mySignal.ledON(RED);
       } 
-      if(MifareReadProcess(KEYACCESS_SECTOR_1,BLOCK_0 + 4))
+      //mifareSectorCurrently(KEYACCESS_SECTOR_1);
+      if(miFareReaderWriter.MifareReadProcess(KEYACCESS_SECTOR_1,BLOCK_0 + 4))
       {
         if (WiFi.status() == WL_CONNECTED)
         {
@@ -1316,7 +915,7 @@ void loop()
     }
   if (myQrreaderwork.ReadQR()>0)
   {
-        mySignal.ledON(BLUE);
+        //mySignal.ledON(BLUE);
         myQR = myQrreaderwork.getQR();
         LongQR = myQR.length();
         counQRSoli++;
@@ -1337,7 +936,11 @@ void loop()
                 miFareWifi = true;
                 if (QRActive==false)
                 {
-                  MifareReaderAvailable = true;
+                  miFareReaderWriter.MifareReaderAvailable = true;
+                }
+                else
+                {
+                  miFareReaderWriter.MifareReaderAvailable = true;
                 }
                 //if (! rtc.begin()) {
                 //Serial.println("No hay un módulo RTC");
@@ -1371,15 +974,11 @@ void loop()
       toggleCounting(false,LastTimeRelay);
       Serial.println("low");
     }
-  if(elapsedTime(LastTimeMifare,100))
-  {
-    toggleCounting(false,LastTimeMifare);
-    MifareActivateTimeoutHandler();
-  }
-  // if (myWEBService.ClientConnected(countQRValido, counQRIni, countQRInv, countErrWifi, counQRSoli, counWifiC, counErrServ, counErrServT, countQRValidoT,ip,myServerComunic.Hour()))
-  //   {
-  //     Serial.println("Se conecto un cliente ");
-  //   }
+  // if(elapsedTime(LastTimeMifare,100))
+  // {
+  //   toggleCounting(false,LastTimeMifare);
+  //   MifareActivateTimeoutHandler();
+  // }
    TimeOut::handler();  
 }
 
