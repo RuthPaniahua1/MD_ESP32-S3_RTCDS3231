@@ -1,13 +1,13 @@
 #include "mifareReaderWriter.h"
 
-TimeOut mifareReaderWriter::OkStatusLedTimeout;
-TimeOut mifareReaderWriter::ErrorStatusLedTimeout;
-TimeOut mifareReaderWriter::MifareActivateTimeout;
+// TimeOut mifareReaderWriter::OkStatusLedTimeout;
+// TimeOut mifareReaderWriter::ErrorStatusLedTimeout;
+// TimeOut mifareReaderWriter::MifareActivateTimeout;
+bool mifareReaderWriter::MifareReaderAvailable = false;
 
 // Constructor
 mifareReaderWriter::mifareReaderWriter(uint8_t SS_PIN,uint8_t RST_PIN,int red,int green,int blue,int buzzer) // Inicializa RfChip con los pines SS y RST
 {
-  MifareReaderAvailable = false;
   RfChip = new MFRC522(SS_PIN,RST_PIN);
   mySignal=new buzzerled(red,green,blue,buzzer);
   RfChip->PCD_Init();
@@ -67,27 +67,28 @@ String mifareReaderWriter::returnValidator(byte *buffer, byte bufferSize)
     return Validator;
 }
 
-void mifareReaderWriter::MifareActivateTimeoutHandler(void)
+void mifareReaderWriter::MifareActivateTimeoutHandler(mifareReaderWriter* instance)
 {
     mifareReaderWriter::MifareReaderAvailable = true;
-    mySignal->ledON(BLUE); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
+    if (MifareReaderAvailable)
+    instance->mySignal->ledON(BLUE); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
  
 }
 
-void mifareReaderWriter::OkStatusLedTimeoutHandler(void)
+void mifareReaderWriter::OkStatusLedTimeoutHandler(mifareReaderWriter* instance)
 {
     //analogWrite(Buzzer, 0);
-    mySignal->buzzerOFF(); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
+    instance->mySignal->buzzerOFF(); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
     //MifareActivateTimeout.attach(&MifareActivateTimeoutHandler, TIME_SLEEP_MIFARE);
     MifareActivateTimeout.timeOut(400, mifareReaderWriter::MifareActivateTimeoutHandler); //delay 10000=10seg, callback function  
 
 }
 
 
-void mifareReaderWriter::mifareReaderWriter::ErrorStatusLedTimeoutHandler(void)
+void mifareReaderWriter::mifareReaderWriter::ErrorStatusLedTimeoutHandler(mifareReaderWriter* instance)
 {
     Serial.println("ErrorStatusLedTimeout"); 
-    mySignal->buzzerOFF(); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
+    instance->mySignal->buzzerOFF(); //RGB= RedErrorStatusLed/BlueOkStatusLed/GreenReadingStatusLed
     MifareActivateTimeout.timeOut(400, mifareReaderWriter::MifareActivateTimeoutHandler); //delay 10000=10seg, callback function  
 }
 

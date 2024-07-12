@@ -308,7 +308,7 @@ void ServerConnection(String DATA)
       mySignal.flashLed(2,GREEN,150,25,true);
       if (QRActive==false)
       {
-        miFareReaderWriter.MifareReaderAvailable=true;
+        // miFareReaderWriter.MifareReaderAvailable=true;
       }
       relay();
     }
@@ -320,7 +320,7 @@ void ServerConnection(String DATA)
       mySignal.flashLed(2,RED,500,150,true);
        if (QRActive==false)
       {
-        miFareReaderWriter.MifareReaderAvailable=true;
+        // miFareReaderWriter.MifareReaderAvailable=true;
       }
     }  
   }
@@ -569,12 +569,12 @@ void setup()
   toggleCounting(true,LastTimeQRStart);
   memset(UniqueIDArduino, 0 , 16); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    //UNIQUE ID ARDUINO
-  miFareReaderWriter.IDArduino();
+  // miFareReaderWriter.IDArduino();
   Serial.print(F("ID ESP32::"));
-  miFareReaderWriter.printHex(UniqueIDArduino, 16);
+  // miFareReaderWriter.printHex(UniqueIDArduino, 16);
   Serial.println("");
   Serial.println(miFareWifi);
-  validatorSN = miFareReaderWriter.returnValidator(UniqueIDArduino, 16);
+  // validatorSN = miFareReaderWriter.returnValidator(UniqueIDArduino, 16);
    if ((counQRIni == 4) && (countPCW <= timetoConfigureWifi))
   {
     Serial.println("modo de configuracion");
@@ -821,7 +821,6 @@ String returnArrayWS(byte *buffer, byte bufferSize, String validatorSN, String c
   return returnarrayWS;
 }
 
-
 void loop() 
 {
   if ((WiFi.status() != WL_CONNECTED && accessPoint == false && WifiConnected==true) || (elapsedTime(lastTimetoReconnectWifi,60000) && miFareWifi==true))
@@ -873,7 +872,7 @@ void loop()
             Serial.println("No hay QR conectado");
             toggleCounting(false,LastTimeQRStart);
             QRsendComand = false;
-            miFareReaderWriter.MifareReaderAvailable = true;
+            // miFareReaderWriter.MifareReaderAvailable = true;
             toggleCounting(true,LastTimeAlive);
           }
         }
@@ -882,7 +881,7 @@ void loop()
           //miFareWifi=true;
           //toggleCounting(true,LastTimeAlive);
           //WifiConnected = true;
-          miFareReaderWriter.MifareReaderAvailable = true;
+          // miFareReaderWriter.MifareReaderAvailable = true;
           QRActive = true;
           if (alivetrue ==true)
           {
@@ -894,25 +893,25 @@ void loop()
           }   
         }
       }
-  if (miFareReaderWriter.MifareReaderAvailable)
-    {
-      if (alivetrue ==true || miFareWifi ==false)
-      {
-        mySignal.ledON(BLUE);
-      }
-      else 
-      {
-        mySignal.ledON(RED);
-      } 
-      //mifareSectorCurrently(KEYACCESS_SECTOR_1);
-      if(miFareReaderWriter.MifareReadProcess(KEYACCESS_SECTOR_1,BLOCK_0 + 4))
-      {
-        if (WiFi.status() == WL_CONNECTED)
-        {
-          ServerConnection(arrayWS);
-        }
-      }
-    }
+  // if (miFareReaderWriter.MifareReaderAvailable)
+    // {
+    //   if (alivetrue ==true || miFareWifi ==false)
+    //   {
+    //     mySignal.ledON(BLUE);
+    //   }
+    //   else 
+    //   {
+    //     mySignal.ledON(RED);
+    //   } 
+    //   //mifareSectorCurrently(KEYACCESS_SECTOR_1);
+    //   if(miFareReaderWriter.MifareReadProcess(KEYACCESS_SECTOR_1,BLOCK_0 + 4))
+    //   {
+    //     if (WiFi.status() == WL_CONNECTED)
+    //     {
+    //       ServerConnection(arrayWS);
+    //     }
+    //   }
+    // }
   if (myQrreaderwork.ReadQR()>0)
   {
         //mySignal.ledON(BLUE);
@@ -936,11 +935,11 @@ void loop()
                 miFareWifi = true;
                 if (QRActive==false)
                 {
-                  miFareReaderWriter.MifareReaderAvailable = true;
+                  // miFareReaderWriter.MifareReaderAvailable = true;
                 }
                 else
                 {
-                  miFareReaderWriter.MifareReaderAvailable = true;
+                  // miFareReaderWriter.MifareReaderAvailable = true;
                 }
                 //if (! rtc.begin()) {
                 //Serial.println("No hay un módulo RTC");

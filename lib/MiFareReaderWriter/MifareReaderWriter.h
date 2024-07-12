@@ -48,7 +48,7 @@ class mifareReaderWriter
 
     Separator separator;
 
-    static buzzerled *mySignal;
+    buzzerled *mySignal;
 
     static bool MifareReaderAvailable;
 
@@ -58,10 +58,12 @@ class mifareReaderWriter
 
     String returnValidator(byte *buffer, byte bufferSize);
 
-    static void MifareActivateTimeoutHandler(void);
+    static void MifareActivateTimeoutHandler(mifareReaderWriter* instance);
 
-    static void OkStatusLedTimeoutHandler(void);
-
+    static void OkStatusLedTimeoutHandler(mifareReaderWriter* instance);
+    
+    static void ErrorStatusLedTimeoutHandler(mifareReaderWriter* instance);
+    
     void printHex(byte *buffer, byte bufferSize);
 
     String returnCard(byte *buffer, byte bufferSize);
@@ -74,6 +76,6 @@ class mifareReaderWriter
 
     bool MifareReadProcess(byte SectorAccess,byte BlockAccess);
 
-    static void ErrorStatusLedTimeoutHandler(void);
+    
 };
 #endif
