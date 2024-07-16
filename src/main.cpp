@@ -1,4 +1,5 @@
 //master
+//ver cambios
 #include <Arduino.h>
 #include "QReaderWork.h"
 #include "SPG75QR.h"
