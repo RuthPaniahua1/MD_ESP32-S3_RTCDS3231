@@ -158,6 +158,9 @@ void toggleCounting(boolean enable,int timerIndex);
 void SelectQR(String QR, int LongQR);
 void ServerConnection(String DATA);
 void relay();
+void IDArduino();
+void printHex(byte *buffer, byte bufferSize);
+String returnValidator(byte *buffer, byte bufferSize);
 int countReconect;
 int Buzzer = 2;
 
@@ -310,7 +313,7 @@ void ServerConnection(String DATA)
       mySignal.flashLed(2,GREEN,150,25,true);
       if (QRActive==false)
       {
-        // miFareReaderWriter.MifareReaderAvailable=true;
+        MifareReaderAvailable=true;
       }
       relay();
     }
@@ -322,7 +325,7 @@ void ServerConnection(String DATA)
       mySignal.flashLed(2,RED,500,150,true);
        if (QRActive==false)
       {
-        // miFareReaderWriter.MifareReaderAvailable=true;
+        MifareReaderAvailable=true;
       }
     }  
   }
@@ -571,12 +574,12 @@ void setup()
   toggleCounting(true,LastTimeQRStart);
   memset(UniqueIDArduino, 0 , 16); // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    //UNIQUE ID ARDUINO
-  // miFareReaderWriter.IDArduino();
+  IDArduino();
   Serial.print(F("ID ESP32::"));
-  // miFareReaderWriter.printHex(UniqueIDArduino, 16);
+  printHex(UniqueIDArduino, 16);
   Serial.println("");
   Serial.println(miFareWifi);
-  // validatorSN = miFareReaderWriter.returnValidator(UniqueIDArduino, 16);
+  validatorSN = returnValidator(UniqueIDArduino, 16);
    if ((counQRIni == 4) && (countPCW <= timetoConfigureWifi))
   {
     Serial.println("modo de configuracion");
@@ -1275,7 +1278,7 @@ void loop()
             Serial.println("No hay QR conectado");
             toggleCounting(false,LastTimeQRStart);
             QRsendComand = false;
-            // miFareReaderWriter.MifareReaderAvailable = true;
+            MifareReaderAvailable = true;
             toggleCounting(true,LastTimeAlive);
           }
         }
@@ -1284,7 +1287,7 @@ void loop()
           //miFareWifi=true;
           //toggleCounting(true,LastTimeAlive);
           //WifiConnected = true;
-          // miFareReaderWriter.MifareReaderAvailable = true;
+          MifareReaderAvailable = false;
           QRActive = true;
           if (alivetrue ==true)
           {
@@ -1341,7 +1344,7 @@ if (MifareReaderAvailable)
                 }
                 else
                 {
-                  MifareReaderAvailable = true;
+                  MifareReaderAvailable = false;
                 }
                 //if (! rtc.begin()) {
                 //Serial.println("No hay un módulo RTC");
