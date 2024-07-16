@@ -1,4 +1,4 @@
-//RTC3231
+//main
 #include <Arduino.h>
 #include "QReaderWork.h"
 #include "SPG75QR.h"
