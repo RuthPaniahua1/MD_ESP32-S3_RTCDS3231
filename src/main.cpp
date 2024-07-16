@@ -1,4 +1,5 @@
 //master/ORIGIN
+//ver cmabios 2.0
 #include <Arduino.h>
 #include "QReaderWork.h"
 #include "SPG75QR.h"
