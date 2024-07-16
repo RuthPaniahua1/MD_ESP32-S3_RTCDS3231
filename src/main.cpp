@@ -27,6 +27,7 @@ const char* PARAM_INPUT_6 = "Select";
 const char* PARAM_INPUT_7 = "ConectionPort";
 const char* PARAM_INPUT_8 = "ConsultPort";
 //******Definicion de variables WiFi*******
+
 String ssid;
 String password;
 String ipWS;
