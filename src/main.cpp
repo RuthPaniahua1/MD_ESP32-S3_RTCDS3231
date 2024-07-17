@@ -1,6 +1,5 @@
-//master/ORIGIN
-//ver cmabios 2.0
-//firstcommit
+//master/MD_ESP32-S3_RTCDS3231
+
 #include <Arduino.h>
 #include "QReaderWork.h"
 #include "SPG75QR.h"
