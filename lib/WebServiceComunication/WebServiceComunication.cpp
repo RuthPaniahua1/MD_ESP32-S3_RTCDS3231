@@ -10,6 +10,27 @@ WebServiceComunication::WebServiceComunication()
     
 }
 
+void WebServiceComunication::hourBegin()
+{
+     #ifndef ESP8266
+        while (!Serial); // wait for serial port to connect. Needed for native USB
+    #endif
+
+    if (! rtc.begin()) 
+    {
+        Serial.println("Couldn't find RTC");
+        Serial.flush();
+        while (1) delay(10);
+    }
+
+    if (rtc.lostPower()) 
+    {
+        Serial.println("RTC lost power, let's set the time!");
+        rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    }
+
+}
+
 String WebServiceComunication::SerializeObject(bool Alive, String SerialNumber, String QR,String ipFija)
 {
     String SerializeObjectData = "";
@@ -165,39 +186,44 @@ bool WebServiceComunication::HttpClientRequest(bool Alive, String QR,bool Buzzer
     }
 }
 
-String WebServiceComunication::Hour()
+DateTime WebServiceComunication::Hour()
 {
-  String* Horarray;
-  String* fechaarray;
-  String SR;
-  String DataTime;
-  int LongSR;
-  ServerResponse2 = getResponse();
-  LongSR = ServerResponse2.length();
-  ServerResponse = ServerResponse2.substring(1,LongSR-1);
-  Horarray = mySeparator.SeparatorIndex(ServerResponse,":");
-  //Serial.println(ServerResponse);
-  for ( int h = 0; h < 4; h++ ) 
-      {
-        Horarray[h];
-      }
-  int seconds = Horarray[2].toInt();
-  int minutes = Horarray[1].toInt();
-  int hours = Horarray[0].toInt();
-  SR = ServerResponse.substring(14,LongSR-1);
-  //Serial.println(SR);
-  fechaarray = mySeparator.SeparatorIndex(SR,"/");
-  for ( int d = 0; d < 3; d++ ) 
-      {
-        Horarray[d];
-      }
- 
-  int day = fechaarray[2].toInt();
-  int month = fechaarray[1].toInt();
-  int year = fechaarray[0].toInt();
-  rtc.setTime(seconds,minutes,hours,day,month,year);
-  //rtc.setTime(30, 24, 15, 17, 1, 2021);
-  DataTime = rtc.getTime("%d/%m/%Y %H:%M:%S");
-  struct tm timeinfo = rtc.getTimeStruct();
-  return DataTime;
+    DateTime now = rtc.now();
+    DateTime future (now + TimeSpan(0,0,20,0));
+    return future;
 }
+
+String WebServiceComunication::returnDateTime(int data)
+{
+    String datetime, time, date, day, month,year, minute,second,hour;
+    DateTime now;
+
+    now = Hour();
+    day = (now.day(), DEC);
+    month = (now.month(), DEC);
+    year = (now.year(), DEC);
+    minute = (now.minute(),DEC);
+    second = (now.second(),DEC);
+    hour = (now.hour(),DEC);
+    date= day + "/" + month + "/" + year;
+    time  = hour + ":" + minute + ":" + second;
+    datetime = date + " " + hour;
+    switch (data)
+    {
+    case 1:
+        return date;
+        break;
+    
+    case 2:
+        return time;
+        break;
+
+    case 3:
+        return datetime;
+        break;
+
+    default:
+        break;
+    }
+}
+

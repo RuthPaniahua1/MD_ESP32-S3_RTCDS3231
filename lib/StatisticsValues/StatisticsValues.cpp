@@ -87,7 +87,7 @@ void StatisticsValues::SaveVariables(int Variable,int count)
 void StatisticsValues::reset()
 {
   preferences.begin("Wifi", false);
-  String tim = String(rtc.getTime(" %H:%M:%S %d/%m/%Y "));
+  //String tim = String(rtc.getTime(" %H:%M:%S %d/%m/%Y "));
   //putDateTime(tim);
   preferences.putString("datetime", datetime);
   countQRValido = 0;

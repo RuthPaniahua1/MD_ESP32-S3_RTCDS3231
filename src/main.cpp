@@ -1,5 +1,4 @@
-//master/MD_ESP32-S3_RTCDS3231
-
+//RTCDS3231/MD_ESP32-S3_RTCDS3231
 #include <Arduino.h>
 #include "QReaderWork.h"
 #include "SPG75QR.h"
@@ -29,6 +28,7 @@ const char* PARAM_INPUT_7 = "ConectionPort";
 const char* PARAM_INPUT_8 = "ConsultPort";
 //******Definicion de variables WiFi*******
 
+DateTime now;
 String ssid;
 String password;
 String ipWS;
@@ -68,7 +68,6 @@ Separator separator;
 String DATA;
 //****Dedinicion para Variables de contadores*****
 int countQRValido, counQRIni, countQRInv, countErrWifi, counQRSoli, counWifiC, counErrServ, counErrServT, countQRValidoT,countHere = 0,countQR =0,https, counIni;
-String DateTime;
 int countTryQR;
 String SN; // Variable para Numero serial de esp32
 const void* SNS;
@@ -203,16 +202,20 @@ boolean elapsedTime (int timerIndex,unsigned long timeToCount)
 void dateTime(String QR)
 {
   String qr = QR;
-  String Date, Time;
-  String Data;
-  Date = (qr.substring(6,8)+"/"+(qr.substring(4,6))+"/"+ "20" +(qr.substring(2,4)));
+  String dateTimeTicket, Time;
+  String dateTimeActual, day, month, year;
+  dateTimeTicket = (qr.substring(6,8)+"/"+(qr.substring(4,6))+"/"+ "20" +(qr.substring(2,4)));
   Serial.print("Date QR: ");
-  Serial.println(Date);
+  Serial.println(dateTimeTicket);
   Serial.print("Date WS: ");
-  Data = myServerComunic.Hour();
-  Data = Data.substring(0,10);
-  Serial.println(Data);
-  if(Date == Data)
+  dateTimeActual = myServerComunic.returnDateTime(DATE);
+  // now = myServerComunic.Hour();
+  // day = (now.day(), DEC);
+  // month = (now.month(), DEC);
+  // year = (now.year(), DEC);
+  // Data = day + "/" + month + "/" + year;
+  Serial.println(dateTimeActual);
+  if(dateTimeTicket == dateTimeActual)
   {
     Serial.println("OPEN");
     relay();
@@ -528,7 +531,7 @@ void getCountVariables()
   miFareWifi=preferences.getBool("miFareWifi",false);
   ConectionPort = preferences.getString("ConPort","");
   ConsultPort = preferences.getString("ConsPort","");
-  DateTime = preferences.getString("datetime", "");
+  //DateTime = preferences.getString("datetime", "");
   https = preferences.getInt("Https", 0);
   preferences.end();
 }
@@ -554,7 +557,8 @@ void setup()
   myQrreaderwork.StartBaudRate(18,17,9600); //Inicializacion QR
   myWEBService.port(); //Inicializacion de puerto Serial de Web service esp32
   SPI.begin(); // Init SPI bus
-  //RfChip.PCD_Init();  
+  RfChip.PCD_Init();  
+  myServerComunic.hourBegin();
   Serial.println("**********ESP32 INIT***********");
   getCountVariables();
   pinMode(myPin, OUTPUT);
@@ -1337,7 +1341,7 @@ if (MifareReaderAvailable)
                 //mySignal.ledOFF();
                 toggleCounting(true,LastTimeAlive);
                 Serial.print("DateTime: ");
-                Serial.println(myServerComunic.Hour());
+                Serial.println(myServerComunic.returnDateTime(DATETIME));
                 alivetrue = true;
                 miFareWifi = true;
                 if (QRActive==false)
@@ -1385,10 +1389,10 @@ if (MifareReaderAvailable)
     toggleCounting(false,LastTimeMifare);
     MifareActivateTimeoutHandler();
   }
-  // if (myWEBService.ClientConnected(countQRValido, counQRIni, countQRInv, countErrWifi, counQRSoli, counWifiC, counErrServ, counErrServT, countQRValidoT,ip,myServerComunic.Hour()))
-  //   {
-  //     Serial.println("Se conecto un cliente ");
-  //   }
+  if (myWEBService.ClientConnected(countQRValido, counQRIni, countQRInv, countErrWifi, counQRSoli, counWifiC, counErrServ, counErrServT, countQRValidoT,ip))
+    {
+      Serial.println("Se conecto un cliente ");
+    }
    TimeOut::handler();  
 }
 

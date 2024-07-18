@@ -15,7 +15,7 @@ void ESPWEB::Sbegin()
     server->begin();
 }
 
-bool ESPWEB::ClientConnected(int countQRValido, int counQRIni, int countQRInv, int countErrWifi, int counQRSoli, int counWifiC, int counErrServ, int counErrServT, int countQRValidoT, String ipFija, String DateTime)
+bool ESPWEB::ClientConnected(int countQRValido, int counQRIni, int countQRInv, int countErrWifi, int counQRSoli, int counWifiC, int counErrServ, int counErrServT, int countQRValidoT, String ipFija)
 {
   String datetime;
     WiFiClient  client = server->available();
@@ -55,17 +55,14 @@ bool ESPWEB::ClientConnected(int countQRValido, int counQRIni, int countQRInv, i
               if (header.indexOf("GET /?value=reset")>= 0)
               {
                 Serial.println("Reseteo");
-                datetime = DateTime;
-                Serial.println(datetime);
-                Values.putDateTime(datetime);
                 Values.reset();
                 //client.connect(iparray,80);
               }
             
-            String dt = Values.getDateTime();
-            Serial.println(dt);
+            //String dt = Values.getDateTime();
+            //Serial.println(dt);
             //Values.getCountVariables();
-            client.println(paginaInicio + " DESDE: " +  dt + " HASTA: ");
+            client.println(paginaInicio + " DESDE: " +  "dt" + " HASTA: ");
             client.println(paginaInicio2 + " Inicios de ESP32: " + pagina2 + String(counQRIni));
             client.println(pagina1 + " Lecturas de QR: " + pagina2 + String(counQRSoli));
             client.println(pagina1 + " QR validos: " + pagina2 + String(countQRValido));

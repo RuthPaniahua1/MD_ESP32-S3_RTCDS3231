@@ -2,7 +2,7 @@
 #define STATISTICS_VALUES
  
 #include <Preferences.h>
-#include <ESP32Time.h>
+#include "RTClib.h"
 //#include <WebServiceComunication.h>
 
 using namespace std;
@@ -34,7 +34,7 @@ class StatisticsValues
 
         void reset();
 
-        ESP32Time rtc;
+        RTC_DS3231 rtc;
 
         void putDateTime(String dateTime_);
 

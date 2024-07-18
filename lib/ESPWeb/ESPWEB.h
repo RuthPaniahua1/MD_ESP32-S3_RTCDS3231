@@ -11,7 +11,7 @@ class ESPWEB
     public:
         explicit ESPWEB();
 
-        bool ClientConnected(int countQRValido, int counQRIni, int countQRInv, int countErrWifi, int counQRSoli, int counWifiC, int counErrServ, int counErrServT, int countQRValidoT, String ipFija,String DateTime);
+        bool ClientConnected(int countQRValido, int counQRIni, int countQRInv, int countErrWifi, int counQRSoli, int counWifiC, int counErrServ, int counErrServT, int countQRValidoT, String ipFija);
         
         StatisticsValues Values;
 

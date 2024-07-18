@@ -5,7 +5,8 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include <QReaderWork.h>
-#include <ESP32Time.h>
+#include "RTClib.h"
+#include <SPI.h>  
 #include <StatisticsValues.h>
 
 using namespace std;
@@ -18,8 +19,16 @@ class WebServiceComunication
         String ServerResponse, ServerResponse2;
 
     public:
+
+        #define DATE 0
+        #define TIME 1
+        #define DATETIME 3
         
+        char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
         explicit WebServiceComunication();
+        
+        void hourBegin();
 
         String SerializeObject(bool Alive, String SerialNumber, String QR,String ipFija);
 
@@ -37,16 +46,18 @@ class WebServiceComunication
 
         int getResponseQR();
 
-        String Hour();
-
         Preferences preferences;
 
         QReaderWork mySeparator;
 
-        ESP32Time rtc;
+        RTC_DS3231 rtc;
+
+        DateTime Hour();
 
         //buzzerled* led;
 
         StatisticsValues Values;
+
+        String returnDateTime(int data);
 };
 #endif
