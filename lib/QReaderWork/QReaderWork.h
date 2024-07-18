@@ -4,6 +4,7 @@
 #include <SoftwareSerial.h>
 #include <iostream> //Validar
 #include <Preferences.h>
+#include <Wire.h>
 
 using namespace std;
 

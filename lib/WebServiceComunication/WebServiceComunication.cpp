@@ -4,6 +4,7 @@
 #include <HTTPClient.h> 
 #include <Preferences.h>
 #include <QReaderWork.h>
+#include <Wire.h>
 
 WebServiceComunication::WebServiceComunication()
 {
@@ -12,6 +13,7 @@ WebServiceComunication::WebServiceComunication()
 
 void WebServiceComunication::hourBegin()
 {
+    Serial.println("rtc begin");  
      #ifndef ESP8266
         while (!Serial); // wait for serial port to connect. Needed for native USB
     #endif
@@ -190,7 +192,7 @@ DateTime WebServiceComunication::Hour()
 {
     DateTime now = rtc.now();
     DateTime future (now + TimeSpan(0,0,20,0));
-    return future;
+    return now;
 }
 
 String WebServiceComunication::returnDateTime(int data)
@@ -199,15 +201,15 @@ String WebServiceComunication::returnDateTime(int data)
     DateTime now;
 
     now = Hour();
-    day = (now.day(), DEC);
-    month = (now.month(), DEC);
-    year = (now.year(), DEC);
-    minute = (now.minute(),DEC);
-    second = (now.second(),DEC);
-    hour = (now.hour(),DEC);
+    day = String(now.day());
+    month = String(now.month());
+    year = String(now.year());
+    minute = String(now.minute());
+    second = String(now.second());
+    hour = String(now.hour());
     date= day + "/" + month + "/" + year;
     time  = hour + ":" + minute + ":" + second;
-    datetime = date + " " + hour;
+    datetime = date + " " + time;
     switch (data)
     {
     case 1:
@@ -223,6 +225,7 @@ String WebServiceComunication::returnDateTime(int data)
         break;
 
     default:
+        return "";
         break;
     }
 }

@@ -558,8 +558,11 @@ void setup()
   myWEBService.port(); //Inicializacion de puerto Serial de Web service esp32
   SPI.begin(); // Init SPI bus
   RfChip.PCD_Init();  
+  Wire.begin(1,2);
   myServerComunic.hourBegin();
   Serial.println("**********ESP32 INIT***********");
+  DateTime future= myServerComunic.Hour();
+  Serial.println(myServerComunic.returnDateTime(DATETIME));
   getCountVariables();
   pinMode(myPin, OUTPUT);
   digitalWrite(myPin, HIGH); 
@@ -1293,7 +1296,7 @@ void loop()
           //miFareWifi=true;
           //toggleCounting(true,LastTimeAlive);
           //WifiConnected = true;
-          MifareReaderAvailable = false;
+          //MifareReaderAvailable = false;
           QRActive = true;
           if (alivetrue ==true)
           {
@@ -1350,7 +1353,7 @@ if (MifareReaderAvailable)
                 }
                 else
                 {
-                  MifareReaderAvailable = false;
+                  MifareReaderAvailable = true;
                 }
                 //if (! rtc.begin()) {
                 //Serial.println("No hay un módulo RTC");
