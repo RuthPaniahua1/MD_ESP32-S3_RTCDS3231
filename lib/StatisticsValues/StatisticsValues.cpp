@@ -87,7 +87,6 @@ void StatisticsValues::SaveVariables(int Variable,int count)
 void StatisticsValues::reset()
 {
   preferences.begin("Wifi", false);
-  String tim = String(rtc.getTime(" %H:%M:%S %d/%m/%Y "));
   //putDateTime(tim);
   preferences.putString("datetime", datetime);
   countQRValido = 0;
@@ -122,21 +121,4 @@ void StatisticsValues::getCountVariables()
   counErrServT = preferences.getInt("counErrServT", 0);
   countQRValidoT = preferences.getInt("countQRValidoT",0);
   preferences.end();
-}
-
-void StatisticsValues::putDateTime(String dateTime_)
-{
-    datetime = dateTime_;
-    preferences.begin("Wifi", false);
-    preferences.putString("datetime", datetime);
-    preferences.end();
-}
-
-String StatisticsValues::getDateTime()
-{
-    preferences.begin("Wifi", true);
-    datetime = preferences.getString("datetime", "");
-    preferences.end();
-    return datetime;
-
 }

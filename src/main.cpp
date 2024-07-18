@@ -201,24 +201,24 @@ boolean elapsedTime (int timerIndex,unsigned long timeToCount)
     return false;
 }
 
-void dateTime(String QR)
-{
-  String qr = QR;
-  String Date, Time;
-  String Data;
-  Date = (qr.substring(6,8)+"/"+(qr.substring(4,6))+"/"+ "20" +(qr.substring(2,4)));
-  Serial.print("Date QR: ");
-  Serial.println(Date);
-  Serial.print("Date WS: ");
-  Data = myServerComunic.Hour();
-  Data = Data.substring(0,10);
-  Serial.println(Data);
-  if(Date == Data)
-  {
-    Serial.println("OPEN");
-    relay();
-  }
-}
+// void dateTime(String QR)
+// {
+//   String qr = QR;
+//   String Date, Time;
+//   String Data;
+//   Date = (qr.substring(6,8)+"/"+(qr.substring(4,6))+"/"+ "20" +(qr.substring(2,4)));
+//   Serial.print("Date QR: ");
+//   Serial.println(Date);
+//   Serial.print("Date WS: ");
+//   Data = myServerComunic.Hour();
+//   Data = Data.substring(0,10);
+//   Serial.println(Data);
+//   if(Date == Data)
+//   {
+//     Serial.println("OPEN");
+//     relay();
+//   }
+// }
 
 void SelectQR(String QR, int LongQR)
 {
@@ -247,7 +247,7 @@ void SelectQR(String QR, int LongQR)
           }
           else
           {
-            dateTime(qr);
+            //dateTime(qr);
           }
           
         }
@@ -273,7 +273,7 @@ void SelectQR(String QR, int LongQR)
           }
           else
           {
-            dateTime(qr);
+            //dateTime(qr);
           }
           }
         }
@@ -555,7 +555,8 @@ void setup()
   myQrreaderwork.StartBaudRate(18,17,9600); //Inicializacion QR
   myWEBService.port(); //Inicializacion de puerto Serial de Web service esp32
   SPI.begin(); // Init SPI bus
-  //RfChip.PCD_Init();  
+  myServerComunic.hourBegin();
+  RfChip.PCD_Init();  
   Serial.println("**********ESP32 INIT***********");
   getCountVariables();
   pinMode(myPin, OUTPUT);
